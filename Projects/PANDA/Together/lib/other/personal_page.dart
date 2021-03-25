@@ -272,7 +272,7 @@ class _SettingPageState extends State<SettingPage> {
       day = '0$day';
     }
     if (month < 10) {
-      day = '0$month';
+      month = '0$month';
     }
     //返回的模板
     return ListView(
@@ -308,6 +308,7 @@ class _SettingPageState extends State<SettingPage> {
                 child: InkWell(
                   child: Text(
                     _dataList[index]['content'],
+                    softWrap: true,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -330,63 +331,67 @@ class _SettingPageState extends State<SettingPage> {
 
         //删除按钮
         widget.editable
-            ? InkWell(
-                onTap: () {
-                  showDialog(
-                      context: context,
-                      barrierDismissible: false, //// user must tap button!
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('提示'),
-                          content: Text('是否删除?'),
-                          actions: <Widget>[
-                            FlatButton(
-                              child: Text('取消'),
-                              onPressed: () {
-                                Navigator.of(context).pop(true);
-                              },
-                            ),
-                            FlatButton(
-                              child: Text('确认'),
-                              onPressed: () {
-                                // 更新状态、数据
-                                this.uid = userId;
-                                this.cid = _dataList[index]['cid'];
-                                _dataList.removeAt(index);
-                                print('-deleteArticle-');
-                                Dio().delete(
-                                  "http://api.mashiro.online/delete/deleteArticle",
-                                  data: {"uid": this.uid, "cid": this.cid},
-                                  options: Options(
-                                      contentType:
-                                          'application/x-www-form-urlencoded'),
-                                );
-                                Navigator.of(context).pop(true);
-                                setState(() {});
-                              },
-                            ),
-                          ],
-                        );
-                      });
-                  // print(index);
-                },
-                child: Container(
-                  alignment: Alignment(1, -1),
-                  padding: EdgeInsets.only(right: 20),
+            ? Container(
+                alignment: Alignment(1, -1),
+                padding: EdgeInsets.only(right: 20.0),
+                child: InkWell(
+                  onTap: () {
+                    showDialog(
+                        context: context,
+                        barrierDismissible: false, //// user must tap button!
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text('提示'),
+                            content: Text('是否删除?'),
+                            actions: <Widget>[
+                              FlatButton(
+                                child: Text('取消'),
+                                onPressed: () {
+                                  Navigator.of(context).pop(true);
+                                },
+                              ),
+                              FlatButton(
+                                child: Text('确认'),
+                                onPressed: () {
+                                  // 更新状态、数据
+                                  this.uid = userId;
+                                  this.cid = _dataList[index]['cid'];
+                                  _dataList.removeAt(index);
+                                  print('-deleteArticle-');
+                                  Dio().delete(
+                                    "http://api.mashiro.online/delete/deleteArticle",
+                                    data: {"uid": this.uid, "cid": this.cid},
+                                    options: Options(
+                                        contentType:
+                                            'application/x-www-form-urlencoded'),
+                                  );
+                                  Navigator.of(context).pop(true);
+                                  setState(() {});
+                                },
+                              ),
+                            ],
+                          );
+                        });
+                    // print(index);
+                  },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end, //水平居右对齐
+                    mainAxisSize: MainAxisSize.min, //宽度自适应
                     children: <Widget>[
-                      Icon(
-                        Icons.delete_forever,
-                        color: Colors.grey,
-                        size: 14.0,
+                      Container(
+                        padding: EdgeInsets.only(top: 2.0),
+                        child: Icon(
+                          Icons.delete_forever,
+                          color: Colors.grey[400],
+                          size: 14.0,
+                        ),
                       ),
                       Text(
                         '删除',
-                        // textAlign: TextAlign.right,
+                        textAlign: TextAlign.right,
                         style: TextStyle(
-                          fontSize: 12.0,
-                          color: Colors.grey[600],
+                          fontSize: 10.0,
+                          color: Colors.grey,
                         ),
                       ),
                     ],

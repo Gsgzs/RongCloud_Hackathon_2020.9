@@ -44,6 +44,7 @@ class _ConversationPageState extends State<ConversationPage>
   int conversationType;
   String targetId;
   String targetName;
+  String targetHead;
 
   List phrasesList = new List(); // 快捷回复，短语数组
   List messageDataSource = new List(); //消息数组
@@ -78,7 +79,8 @@ class _ConversationPageState extends State<ConversationPage>
           "http://api.mashiro.online/center/getUserInfo?uid=${arguments["targetId"]}");
       if (response.data["code"] == 200) {
         setInfo();
-        if (response.data["data"]["name"] != targetName) {
+        if (response.data["data"]["name"] != targetName ||
+            response.data["data"]["url"] != targetHead) {
           targetName = response.data["data"]["name"];
           // 更新信息
           example.UserInfo user = new example.UserInfo();
@@ -141,6 +143,7 @@ class _ConversationPageState extends State<ConversationPage>
       if (userInfo != null) {
         this.info = userInfo;
         this.targetName = this.targetName ?? this.info.name;
+        this.targetHead = this.info.portraitUrl; //头像url
       } else {
         example.UserInfoDataSource.getUserInfo(targetId).then((onValue) {
           setState(() {

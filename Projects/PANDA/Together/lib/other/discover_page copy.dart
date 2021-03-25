@@ -28,8 +28,6 @@ class DiscoverPage extends StatefulWidget {
 // 经纬度
 double jingdu;
 double weidu;
-bool hasPermission = true; //是否有定位权限
-bool hasService = true; //是否有位置信息服务
 
 class _DiscoverPageState extends State<DiscoverPage> {
   List _dataList = [];
@@ -40,7 +38,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   String _address;
   String tips = '小伙伴们正在来的路上....\n(请确保允许定位权限并开启位置服务)';
 
-  // 数据请求
+  // 请求
   void _getDiscoverDatas() async {
     // 获取用户id
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -87,22 +85,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
   }
 
   void _reqPostion() async {
-    // 判断是否有权限
-    if (await LocationPermissions().requestPermissions() ==
-            PermissionStatus.granted ||
-        await LocationPermissions().checkPermissionStatus() ==
-            PermissionStatus.granted) {
-      hasPermission = true; //有权限
-    } else {
-      hasPermission = false; //无权限
-    }
-    if (await LocationPermissions().checkServiceStatus() ==
-        ServiceStatus.enabled) {
-      hasService = true; //有位置服务
-    } else {
-      hasService = false; //无位置服务
-    }
-    setState(() {}); //更新状态
     PermissionStatus permission = await LocationPermissions()
         .checkPermissionStatus(level: LocationPermissionLevel.locationAlways);
     if (permission == PermissionStatus.denied ||
@@ -118,40 +100,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
     FlutterAmapLocation.setOnceLocation(true);
     // 开启定位
     FlutterAmapLocation.startLocation();
-  }
-
-  // 检查定位权限服务
-  void _checkLocation() async {
-    // 打开应用程序设置
-    LocationPermissions().openAppSettings();
-    // print(isOpened);
-
-    // 【开启定时器】
-    // print("*检测定位权限*");
-    var time = Timer.periodic(Duration(milliseconds: 400), (t) async {
-      // print('*执行定时器*');
-
-      PermissionStatus permission =
-          await LocationPermissions().requestPermissions(); //请求允许
-      PermissionStatus permission2 =
-          await LocationPermissions().checkPermissionStatus(); //检查权限
-      ServiceStatus serviceStatus =
-          await LocationPermissions().checkServiceStatus(); //检查服务状态
-
-      // Navigator.pop(context);
-      setState(() {}); //更新状态
-      // print(permission);
-      // print(permission2);
-      // print(serviceStatus);
-      if (permission == PermissionStatus.granted ||
-          permission2 == PermissionStatus.granted ||
-          serviceStatus == ServiceStatus.enabled) {
-        // t.cancel(); //停止定时器
-        _reqPostion(); //发起请求 重新请求
-      }
-      print('*STOP定时器*');
-      t.cancel(); //停止定时器
-    });
   }
 
   void _networkConnect() async {
@@ -210,82 +158,10 @@ class _DiscoverPageState extends State<DiscoverPage> {
           ? DiscoverContent(data: _dataList, id: userId)
           : Container(
               alignment: Alignment.center,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Text(
-                    this.tips,
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(
-                    height: 20.0,
-                  ),
-                  hasService
-                      ? SizedBox.shrink()
-                      : Container(
-                          alignment: Alignment.center,
-                          color: Colors.black26,
-                          width: 210.0,
-                          height: 30.0,
-                          child: Text(
-                            "请开启位置信息服务并重启app",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                  hasService
-                      ? SizedBox(
-                          height: 70.0,
-                        )
-                      : SizedBox(
-                          height: 40.0,
-                        ),
-                  hasPermission
-                      ? SizedBox.shrink()
-                      : Container(
-                          child: new Material(
-                            child: new Ink(
-                              //设置背景
-                              decoration: new BoxDecoration(
-                                color: Colors.blue[400],
-                                //设置四周圆角 角度
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(25.0)),
-                              ),
-                              child: new InkResponse(
-                                borderRadius: new BorderRadius.all(
-                                    new Radius.circular(25.0)),
-                                //点击或者toch控件高亮的shape形状
-                                highlightShape: BoxShape.rectangle,
-                                //.InkResponse内部的radius这个需要注意的是，我们需要半径大于控件的宽，如果radius过小，显示的水波纹就是一个很小的圆，
-                                //水波纹的半径
-                                radius: 300.0,
-                                //水波纹的颜色
-                                splashColor: Colors.blue[300],
-                                //true表示要剪裁水波纹响应的界面 false不剪裁 如果控件是圆角不剪裁的话水波纹是矩形
-                                containedInkWell: true,
-                                //点击事件
-                                onTap: () {
-                                  print("*去开启定位权限*");
-                                  _checkLocation(); //跳转到设置
-                                },
-                                child: Container(
-                                  //设置 child 居中
-                                  alignment: Alignment(0, 0),
-                                  width: 180.0,
-                                  height: 50.0,
-                                  child: Text(
-                                    "去开启定位权限",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                ],
-              ),
-            ),
+              child: Text(
+                this.tips,
+                textAlign: TextAlign.center,
+              )),
     );
   }
 }
@@ -318,11 +194,8 @@ class DiscoverContent extends StatefulWidget {
 }
 
 class _DiscoverContentState extends State<DiscoverContent> {
-  bool isLoading = true; // 是否加载等待
-
   // 下拉刷新
   Future<Null> handlerRefresh() async {
-    print("刷新页面");
     try {
       Response response = await Dio()
           .get("http://api.mashiro.online/center/getCenters?uid=${widget.id}");
@@ -362,7 +235,6 @@ class _DiscoverContentState extends State<DiscoverContent> {
 
   // 判断用户是否在线
   void _isOnline() {
-    isLoading = true;
     widget.data.forEach((element) async {
       try {
         // appkey
@@ -391,39 +263,32 @@ class _DiscoverContentState extends State<DiscoverContent> {
         );
         if (response.data['status'] == '1') {
           element['online'] = 1;
-        } else {
-          element['online'] = 0;
-        }
-        // 更新状态
-        if (mounted) {
-          setState(() {});
+          // 更新状态
+          if (mounted) {
+            setState(() {});
+          }
         }
       } catch (e) {
         print(e);
       }
     });
-    // setState(() {}); //更新状态
-    Future.delayed(const Duration(milliseconds: 0), () {
-      isLoading = false; // 加载完毕
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return isLoading
-        ? SizedBox.shrink()
-        : Container(
-            child: RefreshIndicator(
-              displacement: 20.0,
-              // margin: EdgeInsets.only(top: 16.0),
-              onRefresh: () => handlerRefresh(),
-              child: ListView.separated(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.only(top: 20.0, bottom: 80.0, right: 10.0),
-                itemCount: widget.data.length,
-                itemBuilder: (context, index) {
-                  // 无论是否在线 [算法]推荐
-                  return Container(
+    return Container(
+      child: RefreshIndicator(
+        displacement: 20.0,
+        // margin: EdgeInsets.only(top: 16.0),
+        onRefresh: () => handlerRefresh(),
+        child: ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.only(top: 20.0, bottom: 60.0, right: 10.0),
+          itemCount: widget.data.length,
+          itemBuilder: (context, index) {
+            // 如果用户在线状态为1 就显示推荐
+            return widget.data[index]['online'] == 1
+                ? Container(
                     // 背景图
                     // decoration: BoxDecoration(
                     //   image: DecorationImage(
@@ -496,7 +361,7 @@ class _DiscoverContentState extends State<DiscoverContent> {
                                 toRightTime(widget.data[index]["publishTime"]),
                                 style: TextStyle(
                                   color: Theme.of(context).hintColor,
-                                  fontSize: 10.0,
+                                  fontSize: 12.0,
                                 ),
                               ),
                             )
@@ -505,7 +370,7 @@ class _DiscoverContentState extends State<DiscoverContent> {
                         // 动态内容
                         Container(
                           padding: EdgeInsets.only(
-                              top: 0.0, left: 50.0, bottom: 14.0),
+                              top: 0.0, left: 50.0, bottom: 10.0),
                           child: Text(
                             widget.data[index]["content"],
                             // style: Theme.of(context).textTheme.bodyText1,
@@ -516,84 +381,36 @@ class _DiscoverContentState extends State<DiscoverContent> {
                         // 每条动态的底部开启聊天框
                         Row(
                           children: [
-                            widget.data[index]['online'] is int
-                                ? widget.data[index]['online'] == 1
-                                    ? Container(
-                                        padding: EdgeInsets.only(left: 45.0),
-                                        child: Icon(
-                                          ThirdPartyIcons.OnlineStatus,
-                                          size: 14.0,
-                                          color: Colors.green[200],
-                                        ),
-                                      )
-                                    : Container(
-                                        padding: EdgeInsets.only(left: 45.0),
-                                        child: Icon(
-                                          ThirdPartyIcons.OnlineStatus,
-                                          size: 14.0,
-                                          color: Colors.grey[350],
-                                        ),
-                                      )
-                                : Container(),
-                            widget.data[index]['online'] is int
-                                ? widget.data[index]['online'] == 1
-                                    ? Container(
-                                        padding: EdgeInsets.only(
-                                            left: 2.0, top: 2.0),
-                                        child: Text(
-                                          '在线',
-                                          style: TextStyle(
-                                            color: Colors.green[300],
-                                            fontSize: 12.0,
-                                          ),
-                                        ),
-                                      )
-                                    : Container(
-                                        padding: EdgeInsets.only(
-                                            left: 2.0, top: 2.0),
-                                        child: Text(
-                                          '离线',
-                                          style: TextStyle(
-                                            color: Colors.grey[400],
-                                            fontSize: 12.0,
-                                          ),
-                                        ),
-                                      )
-                                : Container(),
-                            Expanded(child: SizedBox()),
-                            // 距离 [右对齐]
                             Container(
-                              padding: EdgeInsets.only(top: 4.0, right: 20.0),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.only(top: 2.0),
-                                    child: Icon(
-                                      Icons.location_on,
-                                      size: 14.0,
-                                      color: Colors.black26,
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: EdgeInsets.only(left: 0.0),
-                                    child: Text(
-                                      double.parse(widget.data[index]
-                                                  ["distance"]) >
-                                              3000.0
-                                          ? '30.0km以外'
-                                          : handleDistance(
-                                                widget.data[index]["distance"],
-                                              ) +
-                                              '以内',
-                                      style: TextStyle(
-                                          fontSize: 10.0,
-                                          color: Colors.black54),
-                                    ),
-                                  ),
-                                ],
+                              padding: EdgeInsets.only(left: 45.0),
+                              child: Icon(
+                                ThirdPartyIcons.OnlineStatus,
+                                size: 14.0,
+                                color: Colors.green[300],
                               ),
                             ),
-                            // 聊天按钮
+                            Container(
+                                padding: EdgeInsets.only(left: 2.0, top: 2.0),
+                                child: Text(
+                                  '在线',
+                                  style: TextStyle(
+                                    color: Colors.green[300],
+                                    fontSize: 12.0,
+                                  ),
+                                )),
+                            Expanded(
+                              child: Container(
+                                padding: EdgeInsets.only(right: 20.0, top: 4.0),
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  '距离你' +
+                                      handleDistance(
+                                        widget.data[index]["distance"],
+                                      ),
+                                  style: TextStyle(fontSize: 12.0),
+                                ),
+                              ),
+                            ),
                             Container(
                               alignment: Alignment.centerRight,
                               padding: EdgeInsets.only(right: 0.0),
@@ -615,30 +432,33 @@ class _DiscoverContentState extends State<DiscoverContent> {
                         )
                       ],
                     ),
-                  );
-                },
-                // 分割线
-                separatorBuilder: (BuildContext context, int index) {
-                  return Divider(
-                    color: Colors.black26,
+                  )
+                : Container();
+          },
+          // 分割线
+          separatorBuilder: (BuildContext context, int index) {
+            return widget.data[index]['online'] == 1
+                ? Divider(
+                    color: Colors.black54,
                     height: 20,
                     thickness: 1.2,
                     indent: 60,
                     endIndent: 10,
-                  );
-                },
-              ),
-            ),
-          );
+                  )
+                : Container();
+          },
+        ),
+      ),
+    );
   }
 
   // 处理距离
   String handleDistance(String mi) {
     double dis = double.parse(mi);
     if (dis > 1000) {
-      return (dis / 1000).toStringAsFixed(1) + 'km';
+      return (dis ~/ 1000).toString() + 'km';
     } else {
-      return dis.toStringAsFixed(1) + 'm';
+      return dis.toInt().toString() + 'm';
     }
   }
 
@@ -682,15 +502,7 @@ class _DiscoverContentState extends State<DiscoverContent> {
     var old = new DateTime(oldyear, oldmonth, oldday, oldhour, oldmin);
     var difference = now.difference(old);
 
-    if (difference.inDays > 365) {
-      return (nowyear - oldyear).toString() + '年前';
-    } else if (difference.inDays > 30) {
-      return (difference.inDays ~/ 30).toString() + '个月前';
-    } else if (difference.inDays > 21) {
-      return '3周前';
-    } else if (difference.inDays > 7) {
-      return (difference.inDays ~/ 7).toString() + '周前';
-    } else if (difference.inDays > 1) {
+    if (difference.inDays > 1) {
       return (difference.inDays).toString() + '天前';
     } else if (difference.inDays == 1) {
       return '昨天'.toString();
