@@ -526,8 +526,10 @@ yarn start
 
 只有android版本
 
-Together下载链接：https://yww.uy/9Rl2e
-访问密码：panda（无大小写区别）
+Together下载链接：https://yww.uy/4gG2zL
+访问密码：`*****`（无大小写区别）
+
+> ##### 服务器已失效
 
 #### 注意事项：
 
